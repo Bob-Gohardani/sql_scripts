@@ -90,6 +90,15 @@ full join
 on web_events.date = orders.date
 order by 1 desc;
 
+-- If a group of columns are defined as a primary key, they are called a composite key. 
+-- That means the combination of values in these columns will uniquely identify the rows in the table.
+CREATE TABLE IF NOT EXISTS customer_transactions (
+    customer_id int, 
+    store_id int, 
+    spent numeric,
+    PRIMARY KEY (customer_id, store_id)
+);
+
 
 
 
