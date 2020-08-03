@@ -941,3 +941,40 @@ date_posted datetime
 SELECT user_id, job_id, COUNT(DISTINCT date_posted) AS num_posted
 FROM job_postings
 GROUP BY user_id, job_id;
+			 
+			 
+---------------------------
+/*	
+			 
+Write SQL queries (ideally in MySQL format) that create DB schema to store people
+located all over the world, data to store:
+a. Name
+b. Surname
+c. Citizenship
+
+Write SQL queries (ideally in MySQL format) that add parents information (mother,father) to existing schema
+			 
+*/
+			 
+create schema mySchema;
+			 
+CREATE TABLE mySchema.countries(
+  ID INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id)
+);
+			 
+create table mySchema.people(
+    ID BIGINT NOT NULL AUTO_INCREMENT,
+    Name VARCHAR (50) NOT NULL ,
+    Surname VARCHAR (50) NOT NULL ,
+    country_id int not null,
+    PRIMARY KEY (ID),
+    foreign key (country_id) references countries(id) on delete cascade
+);
+			 
+ALTER TABLE mySchema.people ADD Father BIGINT;
+ALTER TABLE mySchema.people ADD CONSTRAINT foreign key (Father) references people(id);
+
+ALTER TABLE mySchema.people ADD Mother BIGINT;
+ALTER TABLE mySchema.people ADD CONSTRAINT foreign key (Mother) references people(id);
