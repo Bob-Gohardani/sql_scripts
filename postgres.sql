@@ -919,4 +919,25 @@ CASE
 END ASC;
 
 
+-- interview problem
+			 
+/*
+			 
+job_posting table
 
+column  | table
+-----------------
+id          integer
+job_id      integer
+user_id     integer
+date_posted datetime
+
+*/
+
+
+-- given a table of job positings,  write a query to breakdown the number of users that have posted their jobs once versus 
+-- the ones who have posted at least one job multiple times
+
+SELECT user_id, job_id, COUNT(DISTINCT date_posted) AS num_posted
+FROM job_postings
+GROUP BY user_id, job_id;
