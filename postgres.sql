@@ -978,3 +978,9 @@ ALTER TABLE mySchema.people ADD CONSTRAINT foreign key (Father) references peopl
 
 ALTER TABLE mySchema.people ADD Mother BIGINT;
 ALTER TABLE mySchema.people ADD CONSTRAINT foreign key (Mother) references people(id);
+			 
+			 
+-- find all the people who are father or mother to another person in this table
+SELECT distinct(p2.id), p2.Name, p2.Surname FROM mySchema.people as p1 inner join mySchema.people as p2 on
+p2.Father = p1.ID or
+p2.Mother = p1.ID;
