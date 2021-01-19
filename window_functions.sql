@@ -1,207 +1,133 @@
--- ************* WINDOW FUNCTIONS *************
+-- WINDOW FUNCTIONS
+-- The OVER() clause offers significant benefits over subqueries in select -- namely, your queries will run faster
 
-/*
-window functions are used for advanced analytics
-
-with window functions you can compare one row, to the other rows inside a query.
-you can use window functions to calculate a row, as a percentage of the total, or to calculate the "moving average" of the query
-
-window functions allow you to aggregate within multiple levels in one query, i.e: sum for a row, and the category that the row
-falls into
-*/
-
--- here we see amount of items sold for every row and also the total of items sold from first day adding up to today
--- OVER uses aggregation without using group by
-select standard_qty,
-       sum(standard_qty) over (order by occured_at) as running_total
-from demo.orders;
-
--- here we do same thing as above but we start from zero at beginning of each month
--- PARTITION BY divides the data into smaller chunks
-select standard_qty,
-       DATE_TRUNC('month', occured_at),
-       sum(standard_qty) over (PARTITION BY DATE_TRUNC('month', occured_at) order by occured_at) as running_total
-from demo.orders;
+select 
+    date,
+    (home_gaol + away_goal) as goals,
+    -- instead of writing subquery to calculate the aggregate, user OVER()
+    AVG(home_goal+away_goal) over() as overall_goal
+from match
+where season = '2011/2012';
 
 
--- if we remove order by, each row of each month will have same value (total for the whole month)
-select standard_qty,
-       DATE_TRUNC('month', occured_at),
-       sum(standard_qty) over (PARTITION BY DATE_TRUNC('month', occured_at)) as running_total
-from demo.orders;
-
---  create a running total of standard_amt_usd (in the orders table) over order time with no date truncation
-select standard_amt_usd,
-    sum(standard_amt_usd) over (order by occured_at) as running_total
-from orders;
-
--- same as above, but in yearly partitions
-SELECT standard_amt_usd,
-       DATE_TRUNC('year', occurred_at) as year,
-       SUM(standard_amt_usd) OVER (PARTITION BY DATE_TRUNC('year', occurred_at) ORDER BY occurred_at) AS running_total
-FROM orders;
+select
+date,
+(home_goal+away_goal) as goals,
+-- which rank to give to a match based on number of goals
+RANK() OVER(order by home_goal+away_goal desc) as goal_rank
+from match
+where season = '2011/2012';
 
 
--- row_number() function orders resulting rows by number starting from 1
-select id,
-       account_id,
-       occured_at,
-       row_number() over (order by occured_at) as row_num
-from demo.orders;
+select 
+m.id, 
+c.name as country, 
+m.season, 
+m.home_goal, 
+m.away_goal,
+-- this will make aggregation over the whole dataset (all the rows of this query)
+avg(m.home_goal+ m.away_goal) over() as overall_avg
+from match as m
+left join country as c on m.country_id = c.id;
 
 
--- here we partition the results based on account_id, so each time this number changes, we start from 1 again
-select id,
-       account_id,
-       occured_at,
-       row_number() over (partition by account_id order by occured_at) as row_num
-from demo.orders;
+-- rank football leagues based on their seasonal averge goal
+select 
+    l.name as league, 
+    avg(m.home_goal+m.away_goal) as avg_goals,
+    rank() over(order by avg(m.home_goal+m.away_goal)) as league_rank
+from league as l
+left join match as m
+on l.id = m.country_id
+where season='2011/2012'
+group by l.name
+order by rank;
 
 
--- rank() is similar to row_number() but here if two rows have same occurred_at value, we give them same rank number,
--- but then jumps to next rank 1,2,2,4
-select id,
-       account_id,
-       occured_at,
-       rank() over (partition by account_id order by occured_at) as row_num
-from demo.orders;
+SELECT 
+	l.name AS league,
+    avg(m.home_goal + m.away_goal) AS avg_goals,
+    rank() over(order by avg(m.home_goal + m.away_goal) desc) AS league_rank
+FROM league AS l
+LEFT JOIN match AS m 
+ON l.id = m.country_id
+WHERE m.season = '2011/2012'
+GROUP BY l.name
+order by league_rank;
 
 
--- Select id, account_id, and total variable from the orders table, then create a column called total_rank that ranks
--- this total amount of paper ordered (from highest to lowest) for 'each account' using a partition
--- in here the row with highest amount in each account_id gets the rank 1
-select id,
-       account_id,
-       total,
-       RANK() over (partition by account_id order by total desc) as total_rank
-from orders;
+-- Partition by
+avg(home_goal) over(partion by season)
+
+select 
+    date, 
+    (home_goal+away_goal) as goals, 
+    avg(home_goal+away_goal) over(partion by season) as overall_avg
+from match;
 
 
--- aggregate methods with window functions : sum(), count(), avg(), min(), max()
-SELECT id,
-       account_id,
-       standard_qty,
-       DATE_TRUNC('month', occurred_at) AS month,
-       DENSE_RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS dense_rank,
-       SUM(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS sum_std_qty,
-       COUNT(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS count_std_qty,
-       AVG(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS avg_std_qty,
-       MIN(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS min_std_qty,
-       MAX(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS max_std_qty
-FROM orders;
+select
+    date,
+    season,
+    home_goal,
+    away_goal,
+    case when hometeam_id = 8673 then 'home'
+         else 'away' end as warsaw_location,
+    -- avg of home goals in a particular season (same season as the game's row)
+    avg(home_goal) over(PARTITION by season) as season_homeavg,
+    avg(away_goal) over(PARTITION by season) as season_awayavg
+from match 
+where hometeam_id = 8673 or awayteam_id = 8673
+order by (home_goal+away_goal) desc;
 
 
--- what happens when you remove "order by column" from a window function??
-
--- The ORDER BY clause is one of two clauses integral to window functions. The ORDER and PARTITION define what is referred
--- to as the “window”—the ordered subset of data over which calculations are made. Removing ORDER BY just leaves an unordered
--- partition; in our query's case, each column's value is simply an aggregation (e.g., sum, count, average, minimum, or maximum)
--- of all the standard_qty values in its respective account_id.
-
-
--- using aliases for easier readability, WINDOW main_window as ...
-SELECT id,
-       account_id,
-       standard_qty,
-       DATE_TRUNC('month', occurred_at) AS month,
-       DENSE_RANK() OVER main_window AS dense_rank,
-       SUM(standard_qty) OVER main_window AS sum_std_qty,
-       COUNT(standard_qty) OVER main_window AS count_std_qty,
-       AVG(standard_qty) OVER main_window AS avg_std_qty,
-       MIN(standard_qty) OVER main_window AS min_std_qty,
-       MAX(standard_qty) OVER main_window AS max_std_qty
-FROM orders
-WINDOW main_window as (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at));
-
--- comparing a row to previous row, LAG(), LEAD() functions
--- the source table that we get our data for lag/lead is the subquery that we call 'sub'
--- lag() : pulls from previous rows
--- lead() : pulls from following rows
--- in example below we get the lag and lead from 1 row in each direction, and each row is a unique standard_sum value because we are windowing over this column
-select account_id,
-       standard_sum,
-       lag(standard_sum) over (order by standard_sum) as lag,
-       lead(standard_sum) over (order by standard_sum) as lead
-from (
-    select account_id,
-           sum(standard_qty) as standard_sum
-    from demo.orders
-    group by 1) sub;
+SELECT 
+	date,
+	season,
+	home_goal,
+	away_goal,
+	CASE WHEN hometeam_id = 8673 THEN 'home' 
+         ELSE 'away' END AS warsaw_location,
+         -- partition by each season and each month
+    avg(home_goal) over(partion by season, extract(month from date)) as season_mo_home,
+    avg(away_goal) over(partition by season, extract(month from date)) as season_mo_away
+from match
+where hometeam_id = 8673 or awayteam_id = 8673
+order by (home_goal+away_goal) desc;
 
 
--- we can extend the above query to compare value of each row to next and previous row
-select account_id,
-       standard_sum,
-       lag(standard_sum) over (order by standard_sum) as lag,
-       lead(standard_sum) over (order by standard_sum) as lead,
-       standard_sum - lag(standard_sum) over (order by standard_sum) as lag_difference,
-       standard_sum - lead(standard_sum) over (order by standard_sum) as lead_difference
-from (
-    select account_id,
-           sum(standard_qty) as standard_sum
-    from demo.orders
-    group by 1) sub;
+-- Sliding Windows
+
+select 
+    date, 
+    home_goal, 
+    away_goal, 
+    -- all home goals from first row until current one sumed up
+    sum(home_goal) over(order by date rows between unbounded preceding and current row) as running_total
+from match
+where hometeam_id = 8456 and season = '2011/2012';
 
 
--- you want to determine how the current order's total revenue ("total" meaning from sales of all types of paper) compares to the next order's total revenue.
--- You'll need to use occurred_at and total_amt_usd in the orders table along with LEAD to do so.
-SELECT occurred_at,
-       total_amt_usd,
-       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) AS lead,
-       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) - total_amt_usd AS lead_difference
-FROM (
-SELECT occurred_at,
-       SUM(total_amt_usd) AS total_amt_usd
-  FROM orders
- GROUP BY 1
-) sub;
+select 
+    date, 
+    home_goal, 
+    away_goal, 
+    sum(home_goal) over(order by date rows between unbounded preceding and current row) as running_total,
+    avg(home_goal) over(order by date rows between unbounded preceding and current row) as running_avg
+from match
+where hometeam_id = 9908 and season = '2011/2012';
 
 
--- Percentiles, N-tiles
--- here we compare each row's standard_qty to all other rows then decide at which n-tile it is located, for ntile(4) we have : 1,2,3,4 tiles
-select id,
-       account_id,
-       occured_at,
-       standard_qty,
-       ntile(4) over (order by standard_qty) as quartile,
-       ntile(5) over (order by standard_qty) as quintile,
-       ntile(100) over (order by standard_qty) as percentile
-from demo.orders
-order by standard_qty desc;
-
--- determine the largest orders (in terms of quantity) a specific customer has made to encourage them to order more similarly sized large orders.
--- You only want to consider the NTILE for that customer's account_id
-
--- Use the NTILE functionality to divide the accounts into 4 levels in terms of the amount of standard_qty for their orders.
--- Your resulting table should have the account_id, the occurred_at time for each order, the total amount of standard_qty paper purchased,
--- and one of four levels in a standard_quartile column
-SELECT
-       account_id,
-       occurred_at,
-       standard_qty,
-       NTILE(4) OVER (PARTITION BY account_id ORDER BY standard_qty) AS standard_quartile
-  FROM orders
- ORDER BY account_id DESC;
+SELECT 
+	date,
+	home_goal,
+	away_goal,
+    SUM(home_goal) OVER(ORDER BY date DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS running_total,
+    AVG(home_goal) OVER(ORDER BY date DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS running_avg
+FROM match
+WHERE awayteam_id = 9908 AND season = '2011/2012';
 
 
--- Use the NTILE functionality to divide the accounts into two levels in terms of the amount of gloss_qty for their orders.
--- Your resulting table should have the account_id, the occurred_at time for each order, the total amount of gloss_qty
--- paper purchased, and one of two levels in a gloss_half column.
-SELECT
-       account_id,
-       occurred_at,
-       gloss_qty,
-       NTILE(2) over (PARTITION BY account_id ORDER BY gloss_qty) AS gloss_half
-FROM orders
-ORDER BY account_id DESC;
 
--- Use the NTILE functionality to divide the orders for each account into 100 levels in terms of the amount of total_amt_usd for their orders.
--- Your resulting table should have the account_id, the occurred_at time for each order, the total amount of total_amt_usd paper purchased,
--- and one of 100 levels in a total_percentile column.
-SELECT
-       account_id,
-       occurred_at,
-       total_amt_usd,
-       NTILE(100) over (PARTITION BY account_id ORDER BY total_amt_usd) AS total_percentile
-FROM orders
-ORDER BY account_id DESC;
+
+
