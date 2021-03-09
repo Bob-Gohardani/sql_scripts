@@ -45,7 +45,7 @@ order by rank;
 
 
 SELECT 
-	l.name AS league,
+    l.name AS league,
     avg(m.home_goal + m.away_goal) AS avg_goals,
     rank() over(order by avg(m.home_goal + m.away_goal) desc) AS league_rank
 FROM league AS l
@@ -87,7 +87,7 @@ SELECT
 	home_goal,
 	away_goal,
 	CASE WHEN hometeam_id = 8673 THEN 'home' 
-         ELSE 'away' END AS warsaw_location,
+        ELSE 'away' END AS warsaw_location,
          -- partition by each season and each month
     avg(home_goal) over(partion by season, extract(month from date)) as season_mo_home,
     avg(away_goal) over(partition by season, extract(month from date)) as season_mo_away
@@ -126,8 +126,3 @@ SELECT
     AVG(home_goal) OVER(ORDER BY date DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS running_avg
 FROM match
 WHERE awayteam_id = 9908 AND season = '2011/2012';
-
-
-
-
-
