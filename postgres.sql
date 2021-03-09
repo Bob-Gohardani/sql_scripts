@@ -921,27 +921,37 @@ END ASC;
 
 -- interview problem
 			 
-/*
+/* 
 			 
-job_posting table
+'job_postings' table
 
-column  | table
------------------
-id          integer
-job_id      integer
-user_id     integer
-date_posted datetime
+col             type
+--------------------
+id              integer
+job_id          integer
+user_id        integer
+date_posted     datetime
 
+given  a table of job postings, write a query to breakdown the number of users that have posted their jobs once
+versus number of users that have posted at least one job several times.
 */
 
+with user_job as (
+    select user_id, job_id, count(distinct date_posted) as num_posted
+    from job_postings
+    group by user_id, job_id
+)
 
--- given a table of job positings,  write a query to breakdown the number of users that have posted their jobs once versus 
--- the ones who have posted at least one job multiple times
-
-SELECT user_id, job_id, COUNT(DISTINCT date_posted) AS num_posted
-FROM job_postings
-GROUP BY user_id, job_id;
-			 
+select
+    SUM(case when avg_num_posted > 1 then 1 end) as posted_several_times,
+    SUM(case when avg_num_posted = 1 then 1 end) as posted_once
+from (
+    select
+        user_id,
+        AVG(num_posted) as avg_num_posted   -- can also be MAX(...)
+    from user_job
+    group by user_id, job_id
+) as t
 			 
 ---------------------------
 /*	
