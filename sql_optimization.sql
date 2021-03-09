@@ -98,10 +98,3 @@ CREATE TABLE IF NOT EXISTS customer_transactions (
     spent numeric,
     PRIMARY KEY (customer_id, store_id)
 );
-
-
-
-
-
-
-
