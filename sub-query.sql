@@ -88,7 +88,7 @@ where season = '2011/2012';
 
 
 SELECT 
-	l.name AS league,
+    l.name AS league,
     ROUND(avg(m.home_goal + m.away_goal), 2) AS avg_goals,
     (SELECT ROUND(avg(home_goal + away_goal), 2) 
      FROM match
@@ -117,7 +117,7 @@ GROUP BY l.name;
 
 
 SELECT 
-	m.stage,
+    m.stage,
     ROUND(avg(m.home_goal + m.away_goal),2) AS avg_goals,
     ROUND((SELECT avg(home_goal + away_goal) 
            FROM match 
@@ -143,12 +143,12 @@ WHERE
 
 
 SELECT 
-	s.stage,
+    s.stage,
     ROUND(s.avg_goals,2) AS avg_goal,
     (select avg(home_goal + away_goal) from match WHERE season = '2012/2013') AS overall_avg
 FROM 
 	(SELECT
-		 stage,
+	 stage,
          avg(home_goal + away_goal) AS avg_goals
 	 FROM match
 	 WHERE season = '2012/2013'
