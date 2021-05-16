@@ -709,3 +709,28 @@ ALTER TABLE mySchema.people ADD CONSTRAINT foreign key (Mother) references peopl
 SELECT distinct(p2.id), p2.Name, p2.Surname FROM mySchema.people as p1 inner join mySchema.people as p2 on
 p2.Father = p1.ID or
 p2.Mother = p1.ID;
+
+
+-- database denormalization
+/* denormalization is a method to improve the performance of database, allowing quicker retrieval of data.
+in this proccess we add up several smaller tables and make a bigger table, making it faster to query without join. */
+
+
+-- write a query to count the number of unique users per day who logged in from both iphone and web
+-- where iphone and web logs are in distinct relation
+
+-- iphone: timestamp | user_id | iphone_session_id
+-- web: timestamp | user_id | web_session_id
+
+-- 1) join
+-- 2) match by day and user_id
+-- 3) group by day and count num_users
+
+select
+    date_trunc('day', i.timestamp) as day,
+    count(distinct i.user_id) as num_users
+from iphone i
+join web w
+    on i.user_id = w.user_id and 
+    date_trunc('day', i.timestamp) = date_trunc('day', w.timestamp)
+group by 1;  -- group by each day in table
