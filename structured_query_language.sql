@@ -1160,6 +1160,46 @@ from demo.orders
 where occured_at >= '2016-01-01' and occured_at < '2016-05-31';
 
 
+-- Subtraction between two sql queries
+SELECT
+    (SELECT COUNT(*) FROM ... WHERE ...)
+  - (SELECT COUNT(*) FROM ... WHERE ...) AS Difference
+
+
+-- Drop VS Drop if exists
+-- Standard SQL syntax is
+DROP TABLE table_name; -- throws an error if table doesnt exists
+-- IF EXISTS is not standard; different platforms might support it with different syntax, or not support it at all. In PostgreSQL, the syntax is
+DROP TABLE IF EXISTS table_name;
+
+
+-- add column with specific allowed values
+Gender VARCHAR(6) NOT NULL CHECK (Gender IN ('Male', 'Female'))
+-- add it to already existing column
+ALTER TABLE distributors 
+   ADD CONSTRAINT check_types 
+   CHECK (element_type = 'lesson' OR element_type = 'quiz');
+
+-- Check if a column contains text using SQL
+SELECT * FROM STUDENTS WHERE STUDENTID like '%Searchstring%'
+
+-- SQL join tables with group by and order by
+SELECT agents.agent_code,agents.agent_name,
+SUM(orders.advance_amount)
+FROM agents,orders
+WHERE agents.agent_code=orders.agent_code
+GROUP BY agents.agent_code,agents.agent_name
+ORDER BY agents.agent_code;
+
+-- SQL how to increase or decrease one for a int column in one command
+UPDATE Orders SET Quantity = Quantity + 1 WHERE ...
+INSERT INTO table SET x=1, y=2 ON DUPLICATE KEY UPDATE x=x+1, y=y+2
+
+-- How to perform string does not equal
+SELECT * FROM table WHERE tester <> 'username' or tester is not null
+
+
+
 
 
 
